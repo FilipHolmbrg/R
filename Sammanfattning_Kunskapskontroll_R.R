@@ -1,14 +1,15 @@
 # Bibliotek
 library("readxl")
-library(fastDummies)
 library(MASS)  
 library(leaps)  
 library(car)   
 library(Metrics)
 library(boot)
 
+set.seed(123) #For reproducibility.
+
 # Import av data
-file_path <- "C:/Users/Elin/Desktop/DS23/R/Kunskapskontroll/bilar.xlsx"
+file_path <- "C:/Users/Elin/Desktop/DS23/R/Kunskapskontroll/cars_from_group.xlsx"
 car_data <- read_excel(file_path)
 
 # Ta bort dubletter
@@ -80,8 +81,7 @@ names(car_data_train)
 lm_1 <- lm(Pris~., data=car_data_train)
 summary(lm_1)
 
-p-value: < 0.00000000000000022: there is at least one dependence of Xi-variables and Y. Good! (F-statistic)
-Det finns 26 variabler, vilket är lite väl mycket. Översiktligt kan vi inte se något större påverkan (p > 0.05) av Färg på pris. Biltyp Coupé (finns bara 16 st i trainset). Färg tas bort, lämnar 18 variabler.
+#p-value: < 0.00000000000000022: there is at least one dependence of Xi-variables and Y. Good! (F-statistic)
 
 pairs(car_data_train)
 
@@ -93,7 +93,7 @@ summary(regfit_best)
 par(mfrow = c(2, 2))
 plot(summary(regfit_best)$adjr2, , main = "Best subset selection")
 ```
-Efter ca 10 variabler sker saktar ökningen R_adj^2 av, "Viktiga" variabler blir (ALLA - Drivning), vi kan inkludera märke för att det borde intuitivt ha en påverkan. Alla dessa kan man förstå påverkar pris.
+# Efter ca 10 variabler sker saktar ökningen R_adj^2 av, "Viktiga" variabler blir (ALLA - Drivning), vi kan inkludera märke för att det borde intuitivt ha en påverkan. Alla dessa kan man förstå påverkar pris.
 
 
 # Hur ser forward subset ut?
@@ -107,7 +107,7 @@ plot(regfit_fwd, scale = "adjr2", main = "Forward stepwise selection")
 
 Forward selection ser liknande ut som best selection. "Viktiga" i ökande ordning: .
 
-Slutsats: Samma svar som i best subset. Tveksamhet kring ifall Märke/Biltyp ska vara med (väljer att ha med båda) Bygg modell från dessa "Viktiga" variabler blir (ALLA - Drivning) och utvärdera om det uppfyller syftet med modellen.
+# Slutsats: Samma svar som i best subset. Tveksamhet kring ifall Märke/Biltyp ska vara med (väljer att ha med båda) Bygg modell från dessa "Viktiga" variabler blir (ALLA - Drivning) och utvärdera om det uppfyller syftet med modellen.
 
 # Utvärdering av modeller:
 
@@ -116,11 +116,9 @@ car_data_train_log <- car_data_train
 car_data_val_log <- car_data_val
 car_data_test_log <- car_data_test
 
-#car_data_train_log$Miltal <- I(car_data_train_log$Miltal^0.1)
+
 car_data_train_log$Pris <- log(car_data_train_log$Pris)
-#car_data_val_log$Miltal <- I(car_data_val_log$Miltal^0.1)
 car_data_val_log$Pris <- log(car_data_val_log$Pris)
-#car_data_test_log$Miltal <- I(car_data_test_log$Miltal^0.1)
 car_data_test_log$Pris <- log(car_data_test_log$Pris)
 
 ## skapande av modeller
@@ -148,8 +146,12 @@ results
 # Steg 3 - utvärdering av eventuella problem
 
 # 1. Icke linjärt förhållande mellan den beroende variabeln och de oberoende variablerna.
-par(mfrow = c(1, 1))
-plot(lm_3)
+# model 2
+par(mfrow = c(2, 2))
+plot(lm_2)
+# model 3
+par(mfrow = c(2, 2))
+plot(lm_3) # better QQ-plt
 
 residuals <- residuals(lm_3)
 
@@ -176,19 +178,16 @@ points(right_fitted, right_residuals, col = "red", pch = 16)
 points(left_fitted, left_residuals, col = "blue", pch = 16)
 points(middle_fitted, middle_residuals, col = "orange", pch = 16)
 
-lm_2: Det konstiga utseendet beror på pris-intervallet för datainsamling (150-500k)
-lm_2: inget tydligt mönster, t ex U form på residualer och fitted values. OK
+#lm_2: Det konstiga utseendet beror på pris-intervallet för datainsamling (150-500k)
+#lm_2: inget tydligt mönster, t ex U form på residualer och fitted values. OK
 
-lm_3: Det konstiga utseendet beror på pris-intervallet för datainsamling (150-500k)
-lm_3: inget tydligt mönster, t ex U form på residualer och fitted values. OK
+#lm_3: Det konstiga utseendet beror på pris-intervallet för datainsamling (150-500k)
+#lm_3: inget tydligt mönster, t ex U form på residualer och fitted values. OK
 
 # 2. Korrelerade residualer
 
 # Extract standardized residuals
 std_resid <- rstandard(lm_3)
-
-names(car_data_train_log)
-summary(lm_3)
 
 # Plot standardized residuals against each predictor variable
 par(mfrow = c(3, 2))  # Set up a 2x2 grid for plots
@@ -216,18 +215,18 @@ plot(car_data_train_log$Märke, std_resid, xlab = '"Märke"', ylab = "Standardiz
 
 # 3.	Icke-konstant varians på residualerna (Heteroskedasticitet).
 
-lm_2: i Residuals vs Fitted plot ses ingen tydlig heteroskedasticitet - variansen påvisar ingen tydlig trend till att öka/minska, utan är slumpmässig.
-lm_3: i Residuals vs Fitted plot ses ingen tydlig heteroskedasticitet - variansen påvisar ingen tydlig trend till att öka/minska, utan är slumpmässig.
+#lm_2: i Residuals vs Fitted plot ses ingen tydlig heteroskedasticitet - variansen påvisar ingen tydlig trend till att öka/minska, utan är slumpmässig.
+#lm_3: i Residuals vs Fitted plot ses ingen tydlig heteroskedasticitet - variansen påvisar ingen tydlig trend till att öka/minska, utan är slumpmässig.
 
 # 4.	Ej normalfördelade residualer.
 residuals <- residuals(lm_3)
 par(mfrow = c(1, 1))
 hist(residuals, col = 4, breaks = 40)
 
-lm_2: histogram ser ok ut, men QQ plot ser ut att avvika lite efter 1.5-2.
-lm_3: histogram ser bättre ut efter transformation av data, QQ plot ser bättre ut.
+#lm_2: histogram ser ok ut, men QQ plot ser ut att avvika lite efter 1.5-2.
+#lm_3: histogram ser bättre ut efter transformation av data, QQ plot ser bättre ut.
 
--------------- avbryter lm_2 utvärdering här och skapar lm_3 från transformerad data. Genomgår steg 1,3,4 igen med lm_3.
+#-------------- avbryter lm_2 utvärdering här och skapar lm_3 från transformerad data. Genomgår steg 1,3,4 igen med lm_3.
 
 # 5. Outliers
 par(mfrow = c(1, 1))
@@ -238,12 +237,12 @@ plot(fitted(lm_3), student_resid,
 abline(h = 0, col = "red", lty = 2)  # Add a horizontal line at 0
 
 
-# identifiera vilken punkt som är -4 < x < 4.
+# identifiera vilken punkt som är -4 < x < 4. Väljer abs(4) istället för abs(3) eftersom det är väldigt många punkter kring 3, dvs icke-outliers.
 limit <- 4
 mask <- student_resid[(student_resid > limit | student_resid < -limit)]
 print(car_data_train[c(names(mask)), ])
 
-#lm_3: finns 7 möjliga outliers. Kan inte se någon uppenbar systematik för dessa 7 (t ex om alla="0" i miltal) som indikerar att valda variabler kan motivera outlier. Låt punkter vara kvar!
+#lm_3: finns 3 möjliga outliers. Kan inte se någon uppenbar systematik för dessa 7 (t ex om alla="0" i miltal) som indikerar att valda variabler kan motivera outlier. Låt punkter vara kvar!
 
 # 6. ”High Leverage” punkter
 par(mfrow = c(1,1))
@@ -253,10 +252,10 @@ plot(hatvalues(lm_3),student_resid,
      xlab = "Leverage", ylab = "Studentized Residuals")
 # Ingen uppenbar enskild High leverage punkt (x-led), däremot finns kluster. 
 
-
 plot(hatvalues(lm_3))
 which.max(hatvalues(lm_3)) # tells us which (index) observation has the largest leverage statistic
 
+# sorterar ut high-leverage kluster
 hatvector <- hatvalues(lm_3)
 limit <- 0.10
 mask <- hatvector[(hatvector > limit)]
@@ -265,16 +264,7 @@ car_data_train[c(names(mask)),]
 summary(car_data_train)
 summary(car_data)
 
-# Alla 8 high leverage punkter är "cabs" och motsvarar alla cabs i train-settet. Ta bort/ta inte bort? Ingen skillnad i summary(). Tar inte bort pga begränsing på modell av cabs utan någon större nytta i summary() eller större skillnad i coefs().
-# se nedan:
-
-coef(lm_3)
-coef(lm_4)
-
-summary(lm_3)
-summary(lm_4)
-
-dim(car_data_train)
+# Alla 8 high leverage punkter är "cabs" och motsvarar alla cabs i train-settet. Ta bort/ta inte bort? Ingen skillnad i summary(). Tar inte bort pga begränsing på modell map "cabs" utan någon större nytta i summary() eller större skillnad i coefs().
 
 # 7. Kollinearitet/Multikollinearitet
 vif_values <- vif(lm_3)
@@ -283,13 +273,24 @@ print(vif_values)
 # lm_3: --OK GVIF < 5 och < 10.
 
 
-results
 
+# konfidensintervall och prediktionsintervall beta-parametrar (koefficienter)
+options(scipen = 999)
+confint(lm_3) # OBS att värden behöver transformeras med exp(), sedan anges som faktor vs intercept
+exp_confint <- exp(confint(lm_3))
+(exp_confint-1)*100 #data anges i % jmf med intercept
 
+# punktskattning
+summary_lm <- summary(lm_3)
+print(summary_lm)
+estimates <- summary_lm$coefficients
+print(exp(summary_lm$coefficients[, 1]))
+estimate_values <- (exp(summary_lm$coefficients[, 1])-1)*100
+estimate_values
 
-# konfidensintervall och prediktionsintervall
-confint(lm_3) # kan se att Diesel ökar priset mest. Märke Renault sänker priset mest.
+formatted_estimates <- format(estimate_values, digits = 4)
 
+#Prediction (och konfidensintervall) för model
 # New data that we want to predict
 n=dim(car_data_test)[1]
 print(n)
@@ -298,28 +299,6 @@ random_indices <- sample(nrow(car_data_test), size = n)  # Select 3 random rows
 new_data <- car_data_test_log[random_indices,]
 #View(new_data)
 
-# Inference and prediction
-options(scipen = 999)
-
-confint(lm_3)
-exp(confint(lm_3))
-
-summary_lm <- summary(lm_3)
-print(summary_lm)
-estimates <- summary_lm$coefficients
-print(exp(summary_lm$coefficients[, 1]))
-estimate_values <- exp(summary_lm$coefficients[, 1])
-estimate_values
-
-formatted_estimates <- format(estimate_values, digits = 4)
-
-# Print the formatted estimates
-print(formatted_estimates)
-
-coef_fix <- sprintf("%.4f", summary_lm$coefficients[, "Estimate"])
-coef_names <- rownames(summary_lm$coefficients)
-coef_print <- paste(coef_names, coef_fix, sep = ":")
-print(coef_print)
 # Create CI & PI for predictions
 confidence_intervals <- predict(lm_3, newdata = new_data, interval = "confidence", level = 0.95)
 prediction_intervals <- predict(lm_3, newdata = new_data, interval = "prediction", level = 0.95)
@@ -340,8 +319,8 @@ mean(confidence_range)
 
 prediction_range <- (prediction_matrix[,3]-prediction_matrix[,2])
 mean(prediction_range)
-options(scipen = 999)
 
+#plottar histogram för prediktionsintervall och konfidensintervall, samt skillnad mellan "verkligt pris"-"predikterat pris"
 par(mfrow = c(1, 2))
 mean(confidence_range)
 hist(confidence_range, breaks = 50, col = 4,
@@ -352,38 +331,8 @@ hist(prediction_range, breaks = 50, col = 4,
      xlab = "Range of prediction intervals",
      main = "Histogram of 515 prediction intervals")
 
-
-
 pris_diff <- exp(new_data$Pris)-prediction_matrix[,1]
 mean(pris_diff) # 2734.388 i genomsnitt
 hist(pris_diff, breaks = 50, col = 4,
      xlab = "Difference between prediction and real price [SEK]",
-     main = "Histogram of 515 predictions") # Visar att modellen inte systematiskt ger fel prediktion, och ger en bättre bild än bara "genomsnittet 2734.388".
-
-
-# Example data
-
-set.seed(123)  # for reproducibility
-true_values <- exp(new_data$Pris)
-
-pred_intervals <- matrix(c(prediction_matrix[,2], prediction_matrix[,3]), ncol = 2, byrow = FALSE)
-pred_intervals
-
-# Plotting
-par(mfrow = c(1, 1))
-
-# Plotting
-plot(true_values, type = "p", ylim = range(c(pred_intervals, true_values)),
-     xlab = "Observation", ylab = "Value", main = "Prediction Intervals")
-
-# Adding prediction intervals as vertical lines
-for (i in 1:nrow(pred_intervals)) {
-  segments(x0 = i, y0 = pred_intervals[i, 1], x1 = i, y1 = pred_intervals[i, 2], col = "blue")
-}
-
-# Adding true values
-points(1:length(true_values), true_values, col = "red", pch = 16)  # true values
-legend("topright", legend = c("Prediction Intervals", "True Values"),
-       col = c("blue", "red"), lty = c(1, NA), pch = c(NA, 16), bty = "n")
-
-# Plotten visar att det kommer finnas ca 5 av 100 prediktionsintervall som inte täcker det sanna priset.
+     main = "Histogram of 515 predictions") # Visar att modellen inte systematiskt ger fel prediktion, och ger en bättre bild än bara "genomsnittet".
